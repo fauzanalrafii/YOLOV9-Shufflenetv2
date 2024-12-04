@@ -12,67 +12,67 @@ anchors: 3
 
 # gelan backbone
 backbone:
-  [
-   [-1, 1, conv_bn_relu_maxpool, [3]],  # 0-P1/2
-   [-1, 1, ShuffleNetV2_InvertedResidual, [128, 2]],
-   [-1, 3, ShuffleNetV2_InvertedResidual, [128, 1]],
-   [-1, 1, ShuffleNetV2_InvertedResidual, [256, 2]],
-   [-1, 7, ShuffleNetV2_InvertedResidual, [256, 1]],
-   [-1, 1, ShuffleNetV2_InvertedResidual, [512, 2]],
-   [-1, 3, ShuffleNetV2_InvertedResidual, [512, 1]],
+  # [from, number, module, args]
+  [[-1, 1, conv_bn_relu_maxpool, [3]],    # 0-P2/4
+   [-1, 1, ShuffleNetV2_InvertedResidual, [32, 2]], # 1-P3/8
+   [-1, 3, ShuffleNetV2_InvertedResidual, [32, 1]], # 2
+   [-1, 1, ShuffleNetV2_InvertedResidual, [64, 2]], # 3-P4/16
+   [-1, 7, ShuffleNetV2_InvertedResidual, [64, 1]], # 4
+   [-1, 1, ShuffleNetV2_InvertedResidual, [128, 2]], # 5-P5/32
+   [-1, 3, ShuffleNetV2_InvertedResidual, [128, 1]], # 6
   ]
 
 # elan head
 head:
   [
    # elan-spp block
-   [-1, 1, SPPELAN, [128, 64]],  # 9
+   [-1, 1, SPPELAN, [128, 128]],  # 9
 
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
-   [[-1, 6], 1, Concat, [1]],  # cat backbone P4
+   [[-1, 4], 1, Concat, [1]],  # cat backbone P4
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [96, 96, 48, 3]],  # 12
 
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
-   [[-1, 4], 1, Concat, [1]],  # cat backbone P3
+   [[-1, 2], 1, Concat, [1]],  # cat backbone P3
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [64, 64, 32, 3]],  # 15
 
    # avg-conv-down merge
    [-1, 1, AConv, [48]],
-   [[-1, 12], 1, Concat, [1]],  # cat head P4
+   [[-1, 10], 1, Concat, [1]],  # cat head P4
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [96, 96, 48, 3]],  # 18 (P4/16-medium)
 
    # avg-conv-down merge
    [-1, 1, AConv, [64]],
-   [[-1, 9], 1, Concat, [1]],  # cat head P5
+   [[-1, 7], 1, Concat, [1]],  # cat head P5
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [128, 128, 64, 3]],  # 21 (P5/32-large)
    
    # elan-spp block
-   [8, 1, SPPELAN, [128, 64]],  # 22
+   [7, 1, SPPELAN, [128, 64]],  # 22
 
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
-   [[-1, 6], 1, Concat, [1]],  # cat backbone P4
+   [[-1, 4], 1, Concat, [1]],  # cat backbone P4
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [96, 96, 48, 3]],  # 25
 
    # up-concat merge
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
-   [[-1, 4], 1, Concat, [1]],  # cat backbone P3
+   [[-1, 2], 1, Concat, [1]],  # cat backbone P3
 
    # elan-2 block
    [-1, 1, RepNCSPELAN4, [64, 64, 32, 3]],  # 28
 
    # detect
-   [[28, 25, 22, 15, 18, 21], 1, DualDDetect, [nc]],  # Detect(P3, P4, P5)
+   [[26, 23, 20, 13, 15, 18], 1, DualDDetect, [nc]],  # Detect(P3, P4, P5)
   ]
