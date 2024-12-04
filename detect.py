@@ -22,8 +22,8 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 @smart_inference_mode()
 def run(
-        weights=ROOT / 'yolo.pt',  # model path or triton URL
-        source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
+        weights=ROOT / 'yolo-shuffle.pt',  # model path or triton URL
+        source=0, #/ 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
@@ -139,8 +139,14 @@ def run(
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
-                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        # Format label dengan nama kelas dan confidence score
+                        label = f"{names[c]} {conf:.2f}"
+
+                        # Gambar kotak dan tambahkan label
                         annotator.box_label(xyxy, label, color=colors(c, True))
+
+                        #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        #annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
@@ -188,7 +194,7 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolo.pt', help='model path or triton URL')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolo-shuffle.pt', help='model path or triton URL')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
@@ -227,5 +233,13 @@ def main(opt):
 
 
 if __name__ == "__main__":
-    opt = parse_opt()
-    main(opt)
+    #opt = parse_opt()
+    #main(opt)
+    run(
+        weights='D:/Documents/Kuliah/semester 7/Computer Vision/Tugas comvis/yolo/yolov9/yolo-shuffle.pt',
+        source=0,  # Webcam sebagai sumber
+        view_img=True,  # Tampilkan hasil di layar
+        conf_thres=0.3,  # Confidence lebih tinggi untuk mengurangi noise
+        imgsz=(640, 640),  # Resolusi gambar deteksi
+        device='cpu'  # Gunakan GPU jika ada
+    )

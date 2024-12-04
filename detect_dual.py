@@ -69,6 +69,11 @@ def run(
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
+    print(f"Number of classes in model: {len(names)}")
+    print(f"Class names in model: {names}")
+
+
+
     # Dataloader
     bs = 1  # batch_size
     if webcam:
@@ -96,7 +101,47 @@ def run(
         with dt[1]:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             pred = model(im, augment=augment, visualize=visualize)
-            pred = pred[0][1]
+            # Check the first item in the list, which is expected to be a tensor
+            # Check if pred is a list and the first element has the 'shape' attribute
+            # Assuming pred is the list of predictions returned by the model
+            # Check if predictions are a list and inspect the structure
+            # Check if predictions are a list and inspect the structure
+            if isinstance(pred, list):
+                print(f"Predictions are a list with {len(pred)} elements.")
+                
+                # Check the first item in predictions
+                if isinstance(pred[0], list):
+                    print(f"The first item in predictions is a list with {len(pred[0])} elements.")
+                    
+                    # Check if the first element in the sublist is a tensor
+                    if isinstance(pred[0][0], torch.Tensor):
+                        # Access the tensor and check its size
+                        tensor = pred[0][0]  # This is the tensor you want
+                        print(f"Shape of the first tensor in pred[0]: {tensor.shape}")
+                        
+                        # Proceed with your size check
+                        if tensor.size(0) > 1:
+                            print("Tensor has more than 1 element in the 0th dimension.")
+                    else:
+                        print(f"The first element in pred[0] is not a tensor, it is of type {type(pred[0][0])}.")
+                else:
+                    print(f"The first item in predictions is not a list, it is of type {type(pred[0])}.")
+            else:
+                print(f"Predictions are not in the expected format. Pred type: {type(pred)}")
+
+
+
+
+
+            #print(f"Shape of pred: {pred[0].shape}")
+
+            #pred = pred[0][1]
+            if pred[0].size(0) > 1:  # Periksa apakah ukuran tensor pada dimensi 0 lebih besar dari 1
+                pred = pred[0][1]
+            else:
+                print("Predictions are insufficient for accessing index 1.")
+                pred = pred[0][0]  # Pilih prediksi pertama sebagai fallback
+
 
         # NMS
         with dt[2]:
@@ -128,7 +173,12 @@ def run(
                 # Print results
                 for c in det[:, 5].unique():
                     n = (det[:, 5] == c).sum()  # detections per class
-                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    #s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    if int(c) in names:
+                        s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "
+                    else:
+                        print(f"Invalid class index detected: {int(c)}")  # Debugging
+
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
@@ -140,7 +190,11 @@ def run(
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
-                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        #label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        label = None if hide_labels else (
+                            names[c] if c in names else f"Invalid class {c}" if hide_conf else f"Invalid class {c} {conf:.2f}"
+                        )
+
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
@@ -228,5 +282,14 @@ def main(opt):
 
 
 if __name__ == "__main__":
-    opt = parse_opt()
-    main(opt)
+    #opt = parse_opt()
+    #main(opt)
+    run(
+        weights='D:/Documents/Kuliah/semester 7/Computer Vision/Tugas comvis/yolo/yolov9/best_yoloshuffle.pt',
+        source=0,  # Webcam sebagai sumber
+        view_img=True,  # Tampilkan hasil di layar
+        conf_thres=0.3,  # Confidence lebih tinggi untuk mengurangi noise
+        imgsz=(640, 640),  # Resolusi gambar deteksi
+        device='cpu'  # Gunakan GPU jika ada
+    )
+
